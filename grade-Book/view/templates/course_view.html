@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ course_data['course_name'] }} - Gradebook</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .alert {
+            font-family: 'Roboto', sans-serif; /* Replace 'Roboto' with the font used in your header */
+            font-size: 1.5rem; /* Adjust to match the header font size */
+            font-weight: 500; /* Make it bold if the header is bold */
+            text-transform: uppercase; /* Match header case styling if applicable */
+            color: #ffffff; /* Optional: Ensures text color contrast for visibility */
+        }
+
+        .alert-danger {
+            background-color: #dc3545; /* Bootstrap default, adjust if needed */
+        }
+
+        .alert-success {
+            background-color: #28a745; /* Bootstrap default, adjust if needed */
+        }
+
+        .btn-equal-width {
+            min-width: 75px; /* Set a consistent width matching the "Remove" buttons */
+            text-align: center; /* Ensure text is centered */
+            color: #ffffff;
+        }
+
+        .custom-success-button {
+            background-color: #28a745; /* Match Bootstrap's success alert background */
+            border-color: #28a745; /* Match border to background */
+            color: white; /* Ensure text is visible */
+            font-size: 1rem; /* Adjust font size for uniformity */
+        }
+
+        .custom-success-button:hover {
+            background-color: #218838; /* Darker shade for hover state */
+            border-color: #1e7e34; /* Match hover border color */
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Gradebook</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active text-white" href="{{ url_for('index') }}">Home</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="/logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<header class="bg-light py-4">
+    <div class="container text-center">
+        <h1 class="display-4">{{ full_name }}</h1>
+        <p class="lead">{{ course_name }} - Course Overview and Assignments</p>
+    </div>
+</header>
+
+{% if error != '' %}
+    <div class="container my-3">
+        <div class="alert alert-danger text-center w-75 mx-auto" role="alert">
+            {{ error }}
+        </div>
+    </div>
+{% endif %}
+{% if success != '' %}
+    <div class="container my-3">
+        <div class="alert alert-success text-center w-75 mx-auto" role="alert">
+            {{ success }}
+        </div>
+    </div>
+{% endif %}
+
+<main class="container my-5">
+    <!-- Course Average -->
+    <section class="mb-4">
+        <h2 class="text-primary">Course Summary</h2>
+        <ul class="list-group">
+            <li class="list-group-item">Course Average: <strong>{{ course_data['Average'] }}</strong></li>
+        </ul>
+    </section>
+
+    <!-- Formative Assignments -->
+    <section class="mb-4">
+        <h2 class="text-primary">Formative Assignments</h2>
+        <ul class="list-group">
+            {% for name, grade in course_data['Assignments']['Formative'].items() %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ name }}: <strong>{{ grade }}</strong></span>
+                    <form method="post"
+                          action="/remove_assignment?assignment_type=assignment_type&assignment_name&course_name=course_name"
+                          class="d-inline">
+                        <input type="hidden" name="assignment_type" id="assignment_type" value="Formative">
+                        <input type="hidden" name="course_name" id="course_name" value="{{ course_name }}">
+                        <input type="hidden" name="assignment_name" id="assignment_name" value="{{ name }}">
+                        <button class="btn btn-danger btn-sm btn-equal-width">Remove</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <!-- Summative Assignments -->
+    <section class="mb-4">
+        <h2 class="text-primary">Summative Assignments</h2>
+        <ul class="list-group">
+            {% for name, grade in course_data['Assignments']['Summative'].items() %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ name }}: <strong>{{ grade }}</strong></span>
+                    <form method="post" action="{{ url_for('remove_assignment') }}" class="d-inline">
+                        <input type="hidden" name="assignment_type" value="Summative">
+                        <input type="hidden" name="course_name" value="{{ course_name }}">
+                        <input type="hidden" name="assignment_name" value="{{ name }}">
+                        <button class="btn btn-danger btn-sm btn-equal-width">Remove</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <!-- Final Exam -->
+    <section class="mb-4">
+        <h2 class="text-primary">Final Exam</h2>
+        <ul class="list-group">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+                Final Exam Score:
+                <strong>{{ "NA" if course_data['Assignments']['Final Exam'] == -1 else course_data['Assignments']['Final Exam'] }}</strong>
+            </span>
+                <form method="post" action="{{ url_for('reset_final_exam') }}" class="d-inline">
+                    <input type="hidden" name="course_name" value="{{ course_name }}">
+                    <button class="btn btn-danger btn-sm btn-equal-width">Reset</button>
+                </form>
+            </li>
+        </ul>
+    </section>
+
+
+    <!-- Add Assignment -->
+    <section class="mb-4">
+        <h2 class="text-primary">Add Assignment</h2>
+        <form method="post" action="/add_assignment?course_name={{ course_name }}" class="row g-3">
+            <input type="hidden" name="course_name" value="{{ course_name }}">
+            <div class="col-md-4">
+                <label for="assignmentName" class="form-label">Assignment Name</label>
+                <input type="text" id="assignmentName" name="assignment_name" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label for="assignmentGrade" class="form-label">Assignment Grade</label>
+                <input type="number" id="assignmentGrade" name="assignment_grade" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+                <label for="assignmentType" class="form-label">Assignment Type</label>
+                <select id="assignmentType" name="assignment_type" class="form-select">
+                    <option value="Formative">Formative</option>
+                    <option value="Summative">Summative</option>
+                    <option value="Final Exam">Final Exam</option>
+                </select>
+            </div>
+            <div class="col-md-12 text-center">
+                <button class="btn btn-success btn-lg custom-success-button">Add Assignment</button>
+            </div>
+        </form>
+    </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
